@@ -6,20 +6,20 @@ st.set_page_config(page_title="Sesmaria do Cerro - Doações", layout="wide")
 st.title("🚜 Sesmaria do Cerro - Sistema de Doações")
 st.write("Gerencie as doações e retiradas de alimentos da região.")
 
-# Lista de produtos confirmados e estáveis (Mandioca, Feijão e Maracujá removidos)
+# Lista de produtos atualizada (20 itens)
 produtos_info = {
     "Beterraba": "kg", "Abacaxi": "unid", "Cebola": "kg", "Batata": "kg", 
     "Laranja": "kg", "Maçã": "kg", "Banana": "kg", "Melancia": "unid", 
     "Mamão": "unid", "Cenoura": "kg", "Tomate": "unid", "Alface": "unid", 
     "Repolho": "unid", "Abóbora": "unid", "Pimentão": "unid", "Alho": "kg", 
-    "Milho": "unid", "Amendoim": "kg"
+    "Milho": "unid", "Amendoim": "kg", "Limão": "kg", "Uva": "kg"
 }
 
 # Inicialização do estoque
 if 'estoque' not in st.session_state:
     st.session_state.estoque = {produto: 0 for produto in produtos_info.keys()}
 
-# Dicionário de imagens que estavam funcionando perfeitamente
+# Dicionário de imagens estáveis
 imagens = {
     "Beterraba": "https://img.icons8.com/color/144/beet.png",
     "Abacaxi": "https://img.icons8.com/color/144/pineapple.png",
@@ -38,7 +38,9 @@ imagens = {
     "Pimentão": "https://img.icons8.com/color/144/paprika.png",
     "Alho": "https://img.icons8.com/color/144/garlic.png",
     "Milho": "https://img.icons8.com/color/144/corn.png",
-    "Amendoim": "https://img.icons8.com/color/144/peanuts.png"
+    "Amendoim": "https://img.icons8.com/color/144/peanuts.png",
+    "Limão": "https://img.icons8.com/color/144/lemon.png",
+    "Uva": "https://img.icons8.com/color/144/grapes.png"
 }
 
 # Exibição do Estoque
@@ -77,4 +79,5 @@ with col2:
             st.rerun()
         else:
             st.error("Estoque insuficiente!")
-            
+
+st.sidebar.info("Sistema desenvolvido para o projeto acadêmico de ADS.")

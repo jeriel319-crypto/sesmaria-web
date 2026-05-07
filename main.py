@@ -1,55 +1,82 @@
 import streamlit as st
 
-# CONFIGURAÇÃO DA PÁGINA
-st.set_page_config(page_title="Sesmaria do Cerro", page_icon="🍎")
+# Configuração da página para visual amplo
+st.set_page_config(page_title="Sesmaria do Cerro - Doações", layout="wide")
 
-# PRODUTOS E ÍCONES
-PRODUTOS_DADOS = {
-    "Abacaxi": "🍍", "Abóbora": "🎃", "Alho": "🧄", "Amendoim": "🥜",
-    "Batata": "🥔", "Bergamota": "🍊", "Beterraba": "🥗", "Brócolis": "🥦", 
-    "Cebola": "🧅", "Couve-flor": "🥬", "Goiaba": "🍈", "Laranja": "🍊", 
-    "Mel": "🍯", "Melancia": "🍉", "Milho": "🌽", "Pão": "🍞",
-    "Pepino": "🥒", "Tomate": "🍅", "Uva": "🍇"
+st.title("🚜 Sesmaria do Cerro - Sistema de Doações")
+st.write("Gerencie as doações e retiradas de alimentos de forma profissional.")
+
+# Lista completa de 22 produtos
+produtos_iniciais = [
+    "Beterraba", "Abacaxi", "Cebola", "Batata", "Mandioca", "Chuchu", "Maracujá",
+    "Laranja", "Maçã", "Banana", "Melancia", "Mamão", "Cenoura", "Tomate",
+    "Alface", "Repolho", "Abóbora", "Pimentão", "Alho", "Milho", "Feijão", "Arroz"
+]
+
+# Inicialização do estoque no estado da sessão
+if 'estoque' not in st.session_state:
+    st.session_state.estoque = {produto: 0 for produto in produtos_iniciais}
+
+# Dicionário de imagens nítidas (Links estáveis do Icons8)
+imagens = {
+    "Beterraba": "https://img.icons8.com/color/144/beet.png",
+    "Abacaxi": "https://img.icons8.com/color/144/pineapple.png",
+    "Cebola": "https://img.icons8.com/color/144/onion.png",
+    "Batata": "https://img.icons8.com/color/144/potato.png",
+    "Mandioca": "https://img.icons8.com/color/144/tapioca.png",
+    "Chuchu": "https://img.icons8.com/color/144/squash.png",
+    "Maracujá": "https://img.icons8.com/color/144/passion-fruit.png",
+    "Laranja": "https://img.icons8.com/color/144/orange.png",
+    "Maçã": "https://img.icons8.com/color/144/apple.png",
+    "Banana": "https://img.icons8.com/color/144/banana.png",
+    "Melancia": "https://img.icons8.com/color/144/watermelon.png",
+    "Mamão": "https://img.icons8.com/color/144/papaya.png",
+    "Cenoura": "https://img.icons8.com/color/144/carrot.png",
+    "Tomate": "https://img.icons8.com/color/144/tomato.png",
+    "Alface": "https://img.icons8.com/color/144/lettuce.png",
+    "Repolho": "https://img.icons8.com/color/144/cabbage.png",
+    "Abóbora": "https://img.icons8.com/color/144/pumpkin.png",
+    "Pimentão": "https://img.icons8.com/color/144/paprika.png",
+    "Alho": "https://img.icons8.com/color/144/garlic.png",
+    "Milho": "https://img.icons8.com/color/144/corn.png",
+    "Feijão": "https://img.icons8.com/color/144/beans.png",
+    "Arroz": "https://img.icons8.com/color/144/rice.png"
 }
 
-# Inicializar estoque
-if 'estoque' not in st.session_state:
-    st.session_state.estoque = {p: 0 for p in PRODUTOS_DADOS.keys()}
-
-st.title("🍎 Sesmaria do Cerro")
-st.subheader("Sistema de Doação Comunitária")
-
-# EXIBIÇÃO DO ESTOQUE
-st.write("### 🛒 Estoque Atual")
-cols = st.columns(3)
-for i, (nome, icone) in enumerate(PRODUTOS_DADOS.items()):
-    qtd = st.session_state.estoque[nome]
-    with cols[i % 3]:
-        st.metric(label=f"{i+1}. {icone} {nome}", value=f"{qtd}")
+# Exibição do Estoque em Grid (Grade)
+st.header("📦 Estoque Atual")
+# Organiza em 4 colunas para não ficar muito apertado no celular
+cols = st.columns(4)
+for i, (item, qtd) in enumerate(st.session_state.estoque.items()):
+    with cols[i % 4]:
+        st.image(imagens[item], width=60)
+        st.metric(label=item, value=f"{qtd} kg")
 
 st.divider()
 
-# BOTÕES DE AÇÃO
-aba1, aba2 = st.tabs(["🧺 RETIRAR", "➕ DOAR"])
+# Área de Transações
+col1, col2 = st.columns(2)
 
-with aba1:
-    num_r = st.number_input("Número do produto (Retirar):", min_value=1, max_value=19, step=1, key="n_ret")
-    qtd_r = st.number_input("Quantidade para retirar:", min_value=1, step=1, key="q_ret")
-    if st.button("Confirmar Retirada", key="btn_ret"):
-        nome_p = list(PRODUTOS_DADOS.keys())[num_r-1]
-        if st.session_state.estoque[nome_p] >= qtd_r:
-            st.session_state.estoque[nome_p] -= qtd_r
-            st.success(f"Retirada de {nome_p} realizada!")
+with col1:
+    st.subheader("➕ Registrar Doação")
+    item_doar = st.selectbox("Selecione o item:", produtos_iniciais, key="doar")
+    qtd_doar = st.number_input("Quantidade (kg):", min_value=0, step=1, key="n_doar")
+    if st.button("Confirmar Doação"):
+        st.session_state.estoque[item_doar] += qtd_doar
+        st.success(f"Adicionado {qtd_doar}kg de {item_doar}!")
+        st.rerun()
+
+with col2:
+    st.subheader("➖ Registrar Retirada")
+    item_retirar = st.selectbox("Selecione o item:", produtos_iniciais, key="retirar")
+    qtd_retirar = st.number_input("Quantidade (kg):", min_value=0, step=1, key="n_retirar")
+    if st.button("Confirmar Retirada"):
+        if st.session_state.estoque[item_retirar] >= qtd_retirar:
+            st.session_state.estoque[item_retirar] -= qtd_retirar
+            st.warning(f"Retirado {qtd_retirar}kg de {item_retirar}!")
             st.rerun()
         else:
             st.error("Estoque insuficiente!")
 
-with aba2:
-    num_d = st.number_input("Número do produto (Doar):", min_value=1, max_value=19, step=1, key="n_doa")
-    qtd_d = st.number_input("Quantidade para doar:", min_value=1, step=1, key="q_doa")
-    if st.button("Confirmar Doação", key="btn_doa"):
-        nome_p = list(PRODUTOS_DADOS.keys())[num_d-1]
-        st.session_state.estoque[nome_p] += qtd_d
-        st.success(f"Obrigado! {nome_p} adicionado.")
-        st.rerun()
-      
+st.sidebar.info("Sistema desenvolvido para o projeto acadêmico de ADS.")
+        

@@ -6,7 +6,7 @@ st.set_page_config(page_title="Sesmaria do Cerro - Doações", layout="wide")
 st.title("🚜 Sesmaria do Cerro - Sistema de Doações")
 st.write("Gerencie as doações e retiradas de alimentos da região.")
 
-# Lista de produtos regionalizada (Arroz removido)
+# Lista de produtos regionalizada
 produtos_info = {
     "Beterraba": "kg", "Abacaxi": "unid", "Cebola": "kg", "Batata": "kg", 
     "Mandioca": "kg", "Chuchu": "unid", "Maracujá": "unid", "Laranja": "kg", 
@@ -20,15 +20,15 @@ produtos_info = {
 if 'estoque' not in st.session_state:
     st.session_state.estoque = {produto: 0 for produto in produtos_info.keys()}
 
-# Dicionário de imagens (Links reforçados para garantir exibição)
+# Dicionário de imagens (Links novos e testados para Maracujá e Feijão)
 imagens = {
     "Beterraba": "https://img.icons8.com/color/144/beet.png",
     "Abacaxi": "https://img.icons8.com/color/144/pineapple.png",
     "Cebola": "https://img.icons8.com/color/144/onion.png",
     "Batata": "https://img.icons8.com/color/144/potato.png",
-    "Mandioca": "https://img.icons8.com/color/144/sweet-potato.png", 
+    "Mandioca": "https://img.icons8.com/color/144/cassava.png", 
     "Chuchu": "https://img.icons8.com/color/144/squash.png",
-    "Maracujá": "https://img.icons8.com/color/144/passion-fruit.png",
+    "Maracujá": "https://img.icons8.com/fluency/144/passion-fruit.png", # Link novo
     "Laranja": "https://img.icons8.com/color/144/orange.png",
     "Maçã": "https://img.icons8.com/color/144/apple.png",
     "Banana": "https://img.icons8.com/color/144/banana.png",
@@ -42,7 +42,7 @@ imagens = {
     "Pimentão": "https://img.icons8.com/color/144/paprika.png",
     "Alho": "https://img.icons8.com/color/144/garlic.png",
     "Milho": "https://img.icons8.com/color/144/corn.png",
-    "Feijão": "https://img.icons8.com/color/144/kidney-beans.png",
+    "Feijão": "https://img.icons8.com/officel/144/beans.png", # Link novo
     "Amendoim": "https://img.icons8.com/color/144/peanuts.png"
 }
 

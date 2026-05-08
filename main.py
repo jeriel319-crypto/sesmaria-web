@@ -1,9 +1,11 @@
 import streamlit as st
+from streamlit_gsheets import GSheetsConnection
+import pandas as pd
 
-# Configuração da página
+# Configuração da página (Exatamente como enviou)
 st.set_page_config(page_title="Sesmaria do Cerro - Doações", layout="wide")
 
-# Força as colunas a ficarem lado a lado no telemóvel (50% para cada)
+# Força as colunas a ficarem lado a lado no telemóvel
 st.markdown("""
     <style>
     [data-testid="column"] {
@@ -14,7 +16,38 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# AJUDA PARA OS MORADORES (Manual de Instalação)
+# Conexão com a Planilha
+conn = st.connection("gsheets", type=GSheetsConnection)
+
+# Lista de produtos original
+produtos_info = {
+    "Beterraba": "kg", "Abacaxi": "unid", "Cebola": "kg", "Batata": "kg", 
+    "Laranja": "kg", "Maçã": "kg", "Banana": "kg", "Melancia": "unid", 
+    "Mamão": "unid", "Cenoura": "kg", "Tomate": "unid", "Alface": "unid", 
+    "Repolho": "unid", "Abóbora": "unid", "Pimentão": "unid", "Alho": "kg", 
+    "Milho": "unid", "Amendoim": "kg", "Limão": "kg", "Uva": "kg"
+}
+
+# Função para carregar dados da planilha
+def carregar_dados():
+    try:
+        # Lê a planilha (ttl=0 evita que o Streamlit guarde lixo em cache)
+        df = conn.read(ttl=0)
+        return df.set_index("Produto")["Quantidade"].to_dict()
+    except:
+        # Se a planilha estiver vazia, começa com zero
+        return {produto: 0 for produto in produtos_info.keys()}
+
+# Inicializa o estoque com os dados REAIS da planilha
+if 'estoque' not in st.session_state:
+    st.session_state.estoque = carregar_dados()
+
+# Função para salvar na planilha sempre que houver alteração
+def atualizar_planilha():
+    df_save = pd.DataFrame(list(st.session_state.estoque.items()), columns=["Produto", "Quantidade"])
+    conn.update(data=df_save)
+
+# AJUDA PARA OS MORADORES
 with st.expander("📲 CLIQUE AQUI PARA COLOCAR O APP NA SUA TELA", expanded=True):
     st.info("""
     Para abrir este sistema sem precisar de link:
@@ -24,18 +57,6 @@ with st.expander("📲 CLIQUE AQUI PARA COLOCAR O APP NA SUA TELA", expanded=Tru
     """)
 
 st.title("🚜 Sesmaria do Cerro - Sistema de Doações")
-
-# Lista de produtos (20 itens)
-produtos_info = {
-    "Beterraba": "kg", "Abacaxi": "unid", "Cebola": "kg", "Batata": "kg", 
-    "Laranja": "kg", "Maçã": "kg", "Banana": "kg", "Melancia": "unid", 
-    "Mamão": "unid", "Cenoura": "kg", "Tomate": "unid", "Alface": "unid", 
-    "Repolho": "unid", "Abóbora": "unid", "Pimentão": "unid", "Alho": "kg", 
-    "Milho": "unid", "Amendoim": "kg", "Limão": "kg", "Uva": "kg"
-}
-
-if 'estoque' not in st.session_state:
-    st.session_state.estoque = {produto: 0 for produto in produtos_info.keys()}
 
 imagens = {
     "Beterraba": "https://img.icons8.com/color/144/beet.png",
@@ -63,13 +84,10 @@ imagens = {
 st.header("📦 Estoque Atual")
 itens = list(st.session_state.estoque.items())
 
-# Criamos as 2 colunas principais (Metade em cada uma)
 col1, col2 = st.columns(2)
 
 for i, (item, qtd) in enumerate(itens):
-    # Divide os 20 produtos: 10 na primeira, 10 na segunda
     caixa = col1 if i < 10 else col2
-    
     unidade = produtos_info[item]
     with caixa:
         st.image(imagens[item], width=50)
@@ -79,7 +97,6 @@ for i, (item, qtd) in enumerate(itens):
 
 st.divider()
 
-# Área de Transações
 col_doar, col_retirar = st.columns(2)
 
 with col_doar:
@@ -88,6 +105,7 @@ with col_doar:
     qtd_doar = st.number_input(f"Qtd ({produtos_info[item_doar]}):", min_value=0, step=1, key="n_doar")
     if st.button("Confirmar Doação"):
         st.session_state.estoque[item_doar] += qtd_doar
+        atualizar_planilha() # Manda para o Google Sheets
         st.rerun()
 
 with col_retirar:
@@ -97,9 +115,9 @@ with col_retirar:
     if st.button("Confirmar Retirada"):
         if st.session_state.estoque[item_retirar] >= qtd_retirar:
             st.session_state.estoque[item_retirar] -= qtd_retirar
+            atualizar_planilha() # Manda para o Google Sheets
             st.rerun()
         else:
             st.error("Sem estoque!")
 
-# Linha final personalizada
 st.sidebar.success("🌱 Projeto Sesmaria do Cerro")

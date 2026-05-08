@@ -3,13 +3,13 @@ import streamlit as st
 # Configuração da página
 st.set_page_config(page_title="Sesmaria do Cerro - Doações", layout="wide")
 
-# Força as colunas a ficarem lado a lado no telemóvel (CSS)
+# Força as colunas a ficarem lado a lado no telemóvel (50% para cada)
 st.markdown("""
     <style>
     [data-testid="column"] {
-        width: 33% !important;
-        flex: 1 1 33% !important;
-        min-width: 33% !important;
+        width: 50% !important;
+        flex: 1 1 50% !important;
+        min-width: 50% !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -63,25 +63,23 @@ imagens = {
 st.header("📦 Estoque Atual")
 itens = list(st.session_state.estoque.items())
 
-# Criamos as 3 colunas principais
-col1, col2, col3 = st.columns(3)
+# Criamos as 2 colunas principais (Metade em cada uma)
+col1, col2 = st.columns(2)
 
 for i, (item, qtd) in enumerate(itens):
-    if i < 7: caixa = col1
-    elif i < 14: caixa = col2
-    else: caixa = col3
+    # Divide os 20 produtos: 10 na primeira, 10 na segunda
+    caixa = col1 if i < 10 else col2
     
     unidade = produtos_info[item]
     with caixa:
-        # Mostra imagem menor para caber nas colunas
-        st.image(imagens[item], width=40)
+        st.image(imagens[item], width=50)
         st.write(f"**{item}**")
         st.write(f"{qtd} {unidade}")
         st.write("---")
 
 st.divider()
 
-# Área de Transações (Doação e Retirada)
+# Área de Transações
 col_doar, col_retirar = st.columns(2)
 
 with col_doar:
@@ -103,5 +101,5 @@ with col_retirar:
         else:
             st.error("Sem estoque!")
 
-# Linha final
+# Linha final personalizada
 st.sidebar.success("🌱 Projeto Sesmaria do Cerro")

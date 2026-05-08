@@ -3,32 +3,29 @@ import streamlit as st
 # Configuração da página
 st.set_page_config(page_title="Sesmaria do Cerro - Doações", layout="wide")
 
-# Bloco de ajuda para moradores leigos (Aparece logo no topo)
-with st.expander("📲 CLIQUE AQUI PARA INSTALAR O APP NO SEU TELEMÓVEL", expanded=True):
+# AJUDA PARA OS MORADORES (Manual de Instalação)
+with st.expander("📲 CLIQUE AQUI PARA COLOCAR O APP NA SUA TELA", expanded=True):
     st.info("""
-    Para ter este sistema sempre à mão como um Aplicativo:
-    1. No Chrome do telemóvel, clique nos **3 pontinhos** no topo direito.
-    2. Escolha a opção **'Instalar aplicativo'** ou **'Adicionar ao ecrã principal'**.
-    3. Confirme em 'Instalar'. Pronto! O ícone aparecerá junto aos seus outros apps.
+    Para abrir este sistema sem precisar de link:
+    1. No topo do seu celular, clique nos **3 pontinhos** do navegador.
+    2. Clique em: **'Adicionar à tela inicial'** ou **'Instalar aplicativo'**.
+    3. Confirme em 'Adicionar'.
     """)
 
 st.title("🚜 Sesmaria do Cerro - Sistema de Doações")
-st.write("Gerencie as doações e retiradas de alimentos da região.")
 
-# Lista de produtos confirmada (20 itens)
+# Lista de produtos (20 itens)
 produtos_info = {
-    "Beterraba": "unid", "Abacaxi": "unid", "Cebola": "unid", "Batata": "unid", 
-    "Laranja": "unid", "Maçã": "unid", "Banana": "kg", "Melancia": "unid", 
+    "Beterraba": "kg", "Abacaxi": "unid", "Cebola": "kg", "Batata": "kg", 
+    "Laranja": "kg", "Maçã": "kg", "Banana": "kg", "Melancia": "unid", 
     "Mamão": "unid", "Cenoura": "kg", "Tomate": "unid", "Alface": "unid", 
-    "Repolho": "unid", "Abóbora": "unid", "Pimentão": "unid", "Alho": "unid", 
-    "Milho": "unid", "Amendoim": "kg", "Limão": "unid", "Uva": "kg"
+    "Repolho": "unid", "Abóbora": "unid", "Pimentão": "unid", "Alho": "kg", 
+    "Milho": "unid", "Amendoim": "kg", "Limão": "kg", "Uva": "kg"
 }
 
-# Inicialização do estoque
 if 'estoque' not in st.session_state:
     st.session_state.estoque = {produto: 0 for produto in produtos_info.keys()}
 
-# Imagens estáveis
 imagens = {
     "Beterraba": "https://img.icons8.com/color/144/beet.png",
     "Abacaxi": "https://img.icons8.com/color/144/pineapple.png",
@@ -48,25 +45,31 @@ imagens = {
     "Alho": "https://img.icons8.com/color/144/garlic.png",
     "Milho": "https://img.icons8.com/color/144/corn.png",
     "Amendoim": "https://img.icons8.com/color/144/peanuts.png",
-    "Limão": "https://img.icons8.com/color/144/lemon.png",
+    "Limão": "https://img.icons8.com/color/144/citrus.png",
     "Uva": "https://img.icons8.com/color/144/grapes.png"
 }
 
-# Exibição do Estoque
 st.header("📦 Estoque Atual")
-cols = st.columns(4)
-for i, (item, qtd) in enumerate(st.session_state.estoque.items()):
+itens = list(st.session_state.estoque.items())
+col1, col2, col3 = st.columns(3)
+
+for i, (item, qtd) in enumerate(itens):
+    if i < 7: caixa = col1
+    elif i < 14: caixa = col2
+    else: caixa = col3
     unidade = produtos_info[item]
-    with cols[i % 4]:
-        st.image(imagens[item], width=65)
-        st.metric(label=item, value=f"{qtd} {unidade}")
+    with caixa:
+        c_img, c_txt = st.columns([1, 3])
+        with c_img: st.image(imagens[item], width=45)
+        with c_txt:
+            st.write(f"**{item}**")
+            st.write(f"{qtd} {unidade}")
+        st.write("---")
 
 st.divider()
+col_doar, col_retirar = st.columns(2)
 
-# Transações
-col1, col2 = st.columns(2)
-
-with col1:
+with col_doar:
     st.subheader("➕ Registrar Doação")
     item_doar = st.selectbox("Selecione o item:", list(produtos_info.keys()), key="doar")
     unid_d = produtos_info[item_doar]
@@ -76,7 +79,7 @@ with col1:
         st.success(f"Adicionado {qtd_doar} {unid_d} de {item_doar}!")
         st.rerun()
 
-with col2:
+with col_retirar:
     st.subheader("➖ Registrar Retirada")
     item_retirar = st.selectbox("Selecione o item:", list(produtos_info.keys()), key="retirar")
     unid_r = produtos_info[item_retirar]
@@ -88,6 +91,4 @@ with col2:
             st.rerun()
         else:
             st.error("Estoque insuficiente!")
-
-st.sidebar.info("Sistema desenvolvido para o projeto académico de ADS.")
-        
+            st.sidebar.success("🌱 Projeto Sesmaria do Cerro")

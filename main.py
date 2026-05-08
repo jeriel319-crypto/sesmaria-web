@@ -16,10 +16,11 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. Conexão com Google Sheets
+# 2. Configuração da Conexão e LINK DIRETO (Para evitar erro 404)
 conn = st.connection("gsheets", type=GSheetsConnection)
+URL_PLANILHA = "https://docs.google.com/spreadsheets/d/1G9YlN3jMTe1ewSk8wBhGPfiwqMf61l0IiXpOZTsoivA"
 
-# 3. Dicionário de Produtos (Unidades e Imagens)
+# 3. Dicionário de Produtos
 produtos_info = {
     "Beterraba": {"un": "kg", "img": "https://img.icons8.com/color/144/beet.png"},
     "Abacaxi": {"un": "unid", "img": "https://img.icons8.com/color/144/pineapple.png"},
@@ -43,32 +44,30 @@ produtos_info = {
     "Uva": {"un": "kg", "img": "https://img.icons8.com/color/144/grapes.png"}
 }
 
-# 4. Função para Carregar Dados (TTL=0 força a leitura real)
+# 4. Função para Carregar Dados
 def carregar_dados():
     try:
-        # worksheet="Sheet1" garante que ele olhe para a aba certa
-        df = conn.read(worksheet="Sheet1", ttl=0)
+        # Usa o link direto da URL definida acima
+        df = conn.read(spreadsheet=URL_PLANILHA, worksheet="Sheet1", ttl=0)
         if df is not None and not df.empty:
-            # Converte a planilha para o dicionário de estoque
             dados_planilha = df.set_index("Produto")["Quantidade"].to_dict()
             estoque_final = {p: 0 for p in produtos_info.keys()}
             estoque_final.update(dados_planilha)
             return estoque_final
     except Exception as e:
         st.error(f"Erro de conexão: {e}")
-    
     return {p: 0 for p in produtos_info.keys()}
 
 # 5. Função para Atualizar Planilha
 def atualizar_planilha():
     try:
         df_save = pd.DataFrame(list(st.session_state.estoque.items()), columns=["Produto", "Quantidade"])
-        conn.update(worksheet="Sheet1", data=df_save)
-        st.toast("✅ Sincronizado com a Planilha!")
+        conn.update(spreadsheet=URL_PLANILHA, worksheet="Sheet1", data=df_save)
+        st.toast("✅ Sincronizado!")
     except Exception as e:
         st.error(f"Erro ao salvar: {e}")
 
-# Inicialização do Estoque
+# Inicialização
 if 'estoque' not in st.session_state:
     st.session_state.estoque = carregar_dados()
 
@@ -108,5 +107,5 @@ with c2:
             atualizar_planilha()
             st.rerun()
         else:
-            st.error("Sem estoque suficiente!")
-            
+            st.error("Sem estoque!")
+    

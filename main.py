@@ -1,122 +1,105 @@
 import streamlit as st
-import json
-import os
-from datetime import datetime, timedelta
 
-# --- CONFIGURAÇÃO ---
-st.set_page_config(page_title="Sesmaria do Cerro - Validade", layout="wide")
+# Configuração da página
+st.set_page_config(page_title="Sesmaria do Cerro - Doações", layout="wide")
 
-# Definição de Validade (em dias)
-VALIDADE = {
-    "Beterraba": 4, "Abacaxi": 4, "Cebola": 4, "Batata": 4, 
-    "Laranja": 4, "Maçã": 4, "Banana": 3, "Melancia": 3, 
-    "Mamão": 2, "Cenoura": 4, "Tomate": 2, "Alface": 2, 
-    "Repolho": 3, "Abóbora": 4, "Pimentão": 2, "Alho": 4, 
-    "Milho": 2, "Amendoim": 4, "Limão": 4, "Uva": 2
+# Força as colunas a ficarem lado a lado no telemóvel (50% para cada)
+st.markdown("""
+    <style>
+    [data-testid="column"] {
+        width: 50% !important;
+        flex: 1 1 50% !important;
+        min-width: 50% !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# AJUDA PARA OS MORADORES (Manual de Instalação)
+with st.expander("📲 CLIQUE AQUI PARA COLOCAR O APP NA SUA TELA", expanded=True):
+    st.info("""
+    Para abrir este sistema sem precisar de link:
+    1. No topo do seu celular, clique nos **3 pontinhos** do navegador.
+    2. Clique em: **'Adicionar à tela inicial'** ou **'Instalar aplicativo'**.
+    3. Confirme em 'Adicionar'.
+    """)
+
+st.title("🚜 Sesmaria do Cerro - Sistema de Doações")
+
+# Lista de produtos (20 itens)
+produtos_info = {
+    "Beterraba": "kg", "Abacaxi": "unid", "Cebola": "kg", "Batata": "kg", 
+    "Laranja": "kg", "Maçã": "kg", "Banana": "kg", "Melancia": "unid", 
+    "Mamão": "unid", "Cenoura": "kg", "Tomate": "unid", "Alface": "unid", 
+    "Repolho": "unid", "Abóbora": "unid", "Pimentão": "unid", "Alho": "kg", 
+    "Milho": "unid", "Amendoim": "kg", "Limão": "kg", "Uva": "kg"
 }
 
-DB_FILE = "estoque_lotes.json"
+if 'estoque' not in st.session_state:
+    st.session_state.estoque = {produto: 0 for produto in produtos_info.keys()}
 
-# --- FUNÇÕES DE LÓGICA ---
-def carregar_lotes():
-    if os.path.exists(DB_FILE):
-        with open(DB_FILE, "r") as f:
-            return json.load(f)
-    return {p: [] for p in VALIDADE.keys()}
+imagens = {
+    "Beterraba": "https://img.icons8.com/color/144/beet.png",
+    "Abacaxi": "https://img.icons8.com/color/144/pineapple.png",
+    "Cebola": "https://img.icons8.com/color/144/onion.png",
+    "Batata": "https://img.icons8.com/color/144/potato.png",
+    "Laranja": "https://img.icons8.com/color/144/orange.png",
+    "Maçã": "https://img.icons8.com/color/144/apple.png",
+    "Banana": "https://img.icons8.com/color/144/banana.png",
+    "Melancia": "https://img.icons8.com/color/144/watermelon.png",
+    "Mamão": "https://img.icons8.com/color/144/papaya.png",
+    "Cenoura": "https://img.icons8.com/color/144/carrot.png",
+    "Tomate": "https://img.icons8.com/color/144/tomato.png",
+    "Alface": "https://img.icons8.com/color/144/lettuce.png",
+    "Repolho": "https://img.icons8.com/color/144/cabbage.png",
+    "Abóbora": "https://img.icons8.com/color/144/pumpkin.png",
+    "Pimentão": "https://img.icons8.com/color/144/paprika.png",
+    "Alho": "https://img.icons8.com/color/144/garlic.png",
+    "Milho": "https://img.icons8.com/color/144/corn.png",
+    "Amendoim": "https://img.icons8.com/color/144/peanuts.png",
+    "Limão": "https://img.icons8.com/color/144/citrus.png",
+    "Uva": "https://img.icons8.com/color/144/grapes.png"
+}
 
-def salvar_lotes():
-    with open(DB_FILE, "w") as f:
-        json.dump(st.session_state.lotes, f)
+st.header("📦 Estoque Atual")
+itens = list(st.session_state.estoque.items())
 
-def limpar_vencidos():
-    agora = datetime.now()
-    houve_mudanca = False
-    novo_estoque = {}
-    
-    for produto, lotes in st.session_state.lotes.items():
-        # Filtra apenas lotes que ainda não venceram
-        lotes_validos = []
-        for lote in lotes:
-            data_entrada = datetime.strptime(lote["timestamp"], "%Y-%m-%d %H:%M:%S")
-            prazo = VALIDADE[produto]
-            if agora <= data_entrada + timedelta(days=prazo):
-                lotes_validos.append(lote)
-            else:
-                houve_mudanca = True
-        novo_estoque[produto] = lotes_validos
-    
-    if houve_mudanca:
-        st.session_state.lotes = novo_estoque
-        salvar_lotes()
-
-# --- INICIALIZAÇÃO ---
-if 'lotes' not in st.session_state:
-    st.session_state.lotes = carregar_lotes()
-
-# Limpa vencidos toda vez que o app roda
-limpar_vencidos()
-
-# --- INTERFACE ---
-st.title("🚜 Controle de Validade - Sesmaria")
-
-# Resumo visual do estoque
-st.header("📦 Estoque (Apenas itens na validade)")
+# Criamos as 2 colunas principais (Metade em cada uma)
 col1, col2 = st.columns(2)
 
-for i, produto in enumerate(VALIDADE.keys()):
-    caixa = col1 if i % 2 == 0 else col2
-    # Soma a quantidade total de todos os lotes válidos daquele produto
-    total_qtd = sum(lote["qtd"] for lote in st.session_state.lotes[produto])
+for i, (item, qtd) in enumerate(itens):
+    # Divide os 20 produtos: 10 na primeira, 10 na segunda
+    caixa = col1 if i < 10 else col2
     
+    unidade = produtos_info[item]
     with caixa:
-        if total_qtd > 0:
-            st.write(f"**{produto}**: {total_qtd} (Vence em {VALIDADE[produto]} dias)")
-        else:
-            st.write(f"~~{produto}~~ (Sem estoque)")
+        st.image(imagens[item], width=50)
+        st.write(f"**{item}**")
+        st.write(f"{qtd} {unidade}")
+        st.write("---")
 
 st.divider()
 
-# --- OPERAÇÕES ---
-t_doar, t_retirar = st.tabs(["➕ Adicionar Lote", "➖ Retirar Item"])
+# Área de Transações
+col_doar, col_retirar = st.columns(2)
 
-with t_doar:
-    p_doar = st.selectbox("Produto:", list(VALIDADE.keys()), key="p_doar")
-    q_doar = st.number_input("Quantidade:", min_value=1, step=1)
-    if st.button("Confirmar Entrada"):
-        novo_lote = {
-            "qtd": q_doar,
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-        st.session_state.lotes[p_doar].append(novo_lote)
-        salvar_lotes()
-        st.success(f"Lote de {p_doar} registrado agora: {novo_lote['timestamp']}")
+with col_doar:
+    st.subheader("➕ Doação")
+    item_doar = st.selectbox("Item:", list(produtos_info.keys()), key="doar")
+    qtd_doar = st.number_input(f"Qtd ({produtos_info[item_doar]}):", min_value=0, step=1, key="n_doar")
+    if st.button("Confirmar Doação"):
+        st.session_state.estoque[item_doar] += qtd_doar
         st.rerun()
 
-with t_retirar:
-    p_ret = st.selectbox("Produto:", list(VALIDADE.keys()), key="p_ret")
-    q_ret = st.number_input("Quantidade a retirar:", min_value=1, step=1)
-    
+with col_retirar:
+    st.subheader("➖ Retirada")
+    item_retirar = st.selectbox("Item:", list(produtos_info.keys()), key="retirar")
+    qtd_retirar = st.number_input(f"Qtd ({produtos_info[item_retirar]}):", min_value=0, step=1, key="n_retirar")
     if st.button("Confirmar Retirada"):
-        total_disponivel = sum(lote["qtd"] for lote in st.session_state.lotes[p_ret])
-        
-        if total_disponivel >= q_ret:
-            # Lógica PEPS: Retira dos lotes mais antigos primeiro
-            restante_para_tirar = q_ret
-            lotes_atualizados = []
-            
-            for lote in st.session_state.lotes[p_ret]:
-                if restante_para_tirar <= 0:
-                    lotes_atualizados.append(lote)
-                elif lote["qtd"] <= restante_para_tirar:
-                    restante_para_tirar -= lote["qtd"]
-                else:
-                    lote["qtd"] -= restante_para_tirar
-                    restante_para_tirar = 0
-                    lotes_atualizados.append(lote)
-            
-            st.session_state.lotes[p_ret] = lotes_atualizados
-            salvar_lotes()
+        if st.session_state.estoque[item_retirar] >= qtd_retirar:
+            st.session_state.estoque[item_retirar] -= qtd_retirar
             st.rerun()
         else:
-            st.error("Quantidade insuficiente no estoque válido!")
-        
+            st.error("Sem estoque!")
+
+# Linha final personalizada
+st.sidebar.success("🌱 Projeto Sesmaria do Cerro")

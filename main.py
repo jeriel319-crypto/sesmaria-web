@@ -3,6 +3,17 @@ import streamlit as st
 # Configuração da página
 st.set_page_config(page_title="Sesmaria do Cerro - Doações", layout="wide")
 
+# Força as colunas a ficarem lado a lado no telemóvel (CSS)
+st.markdown("""
+    <style>
+    [data-testid="column"] {
+        width: 33% !important;
+        flex: 1 1 33% !important;
+        min-width: 33% !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 # AJUDA PARA OS MORADORES (Manual de Instalação)
 with st.expander("📲 CLIQUE AQUI PARA COLOCAR O APP NA SUA TELA", expanded=True):
     st.info("""
@@ -51,44 +62,46 @@ imagens = {
 
 st.header("📦 Estoque Atual")
 itens = list(st.session_state.estoque.items())
+
+# Criamos as 3 colunas principais
 col1, col2, col3 = st.columns(3)
 
 for i, (item, qtd) in enumerate(itens):
     if i < 7: caixa = col1
     elif i < 14: caixa = col2
     else: caixa = col3
+    
     unidade = produtos_info[item]
     with caixa:
-        c_img, c_txt = st.columns([1, 3])
-        with c_img: st.image(imagens[item], width=45)
-        with c_txt:
-            st.write(f"**{item}**")
-            st.write(f"{qtd} {unidade}")
+        # Mostra imagem menor para caber nas colunas
+        st.image(imagens[item], width=40)
+        st.write(f"**{item}**")
+        st.write(f"{qtd} {unidade}")
         st.write("---")
 
 st.divider()
+
+# Área de Transações (Doação e Retirada)
 col_doar, col_retirar = st.columns(2)
 
 with col_doar:
-    st.subheader("➕ Registrar Doação")
-    item_doar = st.selectbox("Selecione o item:", list(produtos_info.keys()), key="doar")
-    unid_d = produtos_info[item_doar]
-    qtd_doar = st.number_input(f"Quantidade ({unid_d}):", min_value=0, step=1, key="n_doar")
+    st.subheader("➕ Doação")
+    item_doar = st.selectbox("Item:", list(produtos_info.keys()), key="doar")
+    qtd_doar = st.number_input(f"Qtd ({produtos_info[item_doar]}):", min_value=0, step=1, key="n_doar")
     if st.button("Confirmar Doação"):
         st.session_state.estoque[item_doar] += qtd_doar
-        st.success(f"Adicionado {qtd_doar} {unid_d} de {item_doar}!")
         st.rerun()
 
 with col_retirar:
-    st.subheader("➖ Registrar Retirada")
-    item_retirar = st.selectbox("Selecione o item:", list(produtos_info.keys()), key="retirar")
-    unid_r = produtos_info[item_retirar]
-    qtd_retirar = st.number_input(f"Quantidade ({unid_r}):", min_value=0, step=1, key="n_retirar")
+    st.subheader("➖ Retirada")
+    item_retirar = st.selectbox("Item:", list(produtos_info.keys()), key="retirar")
+    qtd_retirar = st.number_input(f"Qtd ({produtos_info[item_retirar]}):", min_value=0, step=1, key="n_retirar")
     if st.button("Confirmar Retirada"):
         if st.session_state.estoque[item_retirar] >= qtd_retirar:
             st.session_state.estoque[item_retirar] -= qtd_retirar
-            st.warning(f"Retirado {qtd_retirar} {unid_r} de {item_retirar}!")
             st.rerun()
         else:
-            st.error("Estoque insuficiente!")
-            st.sidebar.success("🌱 Projeto Sesmaria do Cerro")
+            st.error("Sem estoque!")
+
+# Linha final
+st.sidebar.success("🌱 Projeto Sesmaria do Cerro")

@@ -2,10 +2,10 @@ import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 
-# Configuração da página (Exatamente como você enviou)
+# 1. Configuração da página
 st.set_page_config(page_title="Sesmaria do Cerro - Doações", layout="wide")
 
-# Força as colunas a ficarem lado a lado no telemóvel
+# Estilo para manter as colunas lado a lado no celular
 st.markdown("""
     <style>
     [data-testid="column"] {
@@ -16,10 +16,10 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# Conexão com Google Sheets
+# 2. Conexão com Google Sheets
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# Lista de produtos (20 itens)
+# 3. Lista de produtos e unidades
 produtos_info = {
     "Beterraba": "kg", "Abacaxi": "unid", "Cebola": "kg", "Batata": "kg", 
     "Laranja": "kg", "Maçã": "kg", "Banana": "kg", "Melancia": "unid", 
@@ -28,40 +28,42 @@ produtos_info = {
     "Milho": "unid", "Amendoim": "kg", "Limão": "kg", "Uva": "kg"
 }
 
-# FUNÇÃO PARA CARREGAR OS DADOS
+# 4. Função para carregar dados (Lê da planilha ou gera zeros)
 def carregar_dados():
     try:
-        # Lê a planilha; se estiver vazia ou der erro, gera estoque zero
         df = conn.read(ttl=0)
         if df is None or df.empty:
-            return {produto: 0 for produto in produtos_info.keys()}
+            return {p: 0 for p in produtos_info.keys()}
+        # Converte a planilha em um dicionário
         return df.set_index("Produto")["Quantidade"].to_dict()
     except:
-        return {produto: 0 for produto in produtos_info.keys()}
+        return {p: 0 for p in produtos_info.keys()}
 
-# FUNÇÃO PARA SALVAR (O segredo para não dar erro)
+# 5. Função para salvar dados (Força a gravação no Google)
 def atualizar_planilha():
-    # Cria a tabela para enviar ao Google
-    df_save = pd.DataFrame(list(st.session_state.estoque.items()), columns=["Produto", "Quantidade"])
-    # Envia para a planilha "Sesmaria" que está limpa
-    conn.update(data=df_save)
+    try:
+        # Prepara a tabela com os nomes e valores atuais
+        df_save = pd.DataFrame(list(st.session_state.estoque.items()), columns=["Produto", "Quantidade"])
+        # Limpa o cache do Streamlit
+        st.cache_data.clear()
+        # Envia para o Google Sheets
+        conn.update(data=df_save)
+        st.toast("✅ Gravado na Planilha!")
+    except Exception as e:
+        st.error(f"Erro ao salvar: {e}")
 
-# Inicializa o estoque
+# Inicializa o estoque se não existir
 if 'estoque' not in st.session_state:
     st.session_state.estoque = carregar_dados()
 
-# --- ABAIXO SEGUE O SEU VISUAL ORIGINAL ---
+# --- INTERFACE DO USUÁRIO ---
 
-with st.expander("📲 CLIQUE AQUI PARA COLOCAR O APP NA SUA TELA", expanded=True):
-    st.info("""
-    Para abrir este sistema sem precisar de link:
-    1. No topo do seu celular, clique nos **3 pontinhos** do navegador.
-    2. Clique em: **'Adicionar à tela inicial'** ou **'Instalar aplicativo'**.
-    3. Confirme em 'Adicionar'.
-    """)
+with st.expander("📲 COMO INSTALAR NO CELULAR", expanded=True):
+    st.info("Clique nos 3 pontinhos do navegador e escolha 'Adicionar à tela inicial'.")
 
-st.title("🚜 Sesmaria do Cerro - Sistema de Doações")
+st.title("🚜 Sesmaria do Cerro")
 
+# Links das imagens
 imagens = {
     "Beterraba": "https://img.icons8.com/color/144/beet.png",
     "Abacaxi": "https://img.icons8.com/color/144/pineapple.png",
@@ -86,43 +88,41 @@ imagens = {
 }
 
 st.header("📦 Estoque Atual")
-itens = list(st.session_state.estoque.items())
-
 col1, col2 = st.columns(2)
 
+itens = list(st.session_state.estoque.items())
 for i, (item, qtd) in enumerate(itens):
     caixa = col1 if i < 10 else col2
-    unidade = produtos_info[item]
     with caixa:
-        st.image(imagens[item], width=50)
-        st.write(f"**{item}**")
-        st.write(f"{qtd} {unidade}")
+        st.image(imagens[item], width=40)
+        st.write(f"**{item}:** {qtd} {produtos_info[item]}")
         st.write("---")
 
 st.divider()
 
-col_doar, col_retirar = st.columns(2)
+# Painel de Doação e Retirada
+c_doar, c_retirar = st.columns(2)
 
-with col_doar:
-    st.subheader("➕ Doação")
-    item_doar = st.selectbox("Item:", list(produtos_info.keys()), key="doar")
-    qtd_doar = st.number_input(f"Qtd ({produtos_info[item_doar]}):", min_value=0, step=1, key="n_doar")
-    if st.button("Confirmar Doação"):
-        st.session_state.estoque[item_doar] += qtd_doar
+with c_doar:
+    st.subheader("➕ Doar")
+    p_doar = st.selectbox("O que vai doar?", list(produtos_info.keys()), key="sel_doar")
+    q_doar = st.number_input(f"Qtd ({produtos_info[p_doar]}):", min_value=0, step=1, key="num_doar")
+    if st.button("Confirmar Doação", use_container_width=True):
+        st.session_state.estoque[p_doar] += q_doar
         atualizar_planilha()
         st.rerun()
 
-with col_retirar:
-    st.subheader("➖ Retirada")
-    item_retirar = st.selectbox("Item:", list(produtos_info.keys()), key="retirar")
-    qtd_retirar = st.number_input(f"Qtd ({produtos_info[item_retirar]}):", min_value=0, step=1, key="n_retirar")
-    if st.button("Confirmar Retirada"):
-        if st.session_state.estoque[item_retirar] >= qtd_retirar:
-            st.session_state.estoque[item_retirar] -= qtd_retirar
+with c_retirar:
+    st.subheader("➖ Retirar")
+    p_ret = st.selectbox("O que vai retirar?", list(produtos_info.keys()), key="sel_ret")
+    q_ret = st.number_input(f"Qtd ({produtos_info[p_ret]}):", min_value=0, step=1, key="num_ret")
+    if st.button("Confirmar Retirada", use_container_width=True):
+        if st.session_state.estoque[p_ret] >= q_ret:
+            st.session_state.estoque[p_ret] -= q_ret
             atualizar_planilha()
             st.rerun()
         else:
-            st.error("Sem estoque!")
+            st.error("Estoque insuficiente!")
 
-st.sidebar.success("🌱 Projeto Sesmaria do Cerro")
-    
+st.sidebar.write("🌱 **Sesmaria do Cerro**")
+        

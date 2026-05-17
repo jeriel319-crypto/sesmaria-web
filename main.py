@@ -16,11 +16,11 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. Configuração da Conexão e LINK DIRETO (Para evitar erro 404)
+# 2. Configuração da Conexão e LINK DIRETO CORRIGIDO (Para evitar erro 404)
 conn = st.connection("gsheets", type=GSheetsConnection)
-URL_PLANILHA = "https://docs.google.com/spreadsheets/d/1G9YlN3jMTe1ewSk8wBhGPfiwqMf61l0IiXpOZTsoivA"
+URL_PLANILHA = "https://docs.google.com/spreadsheets/d/1G9YlN3jMTe1ewSk8wBhGPfiwqMf61l0IiXpOZTsoivA/edit#gid=0"
 
-# 3. Dicionário de Produtos
+# 3. Dicionário de Produtos (Chaves ajustadas para bater com a planilha)
 produtos_info = {
     "Beterraba": {"un": "kg", "img": "https://img.icons8.com/color/144/beet.png"},
     "Abacaxi": {"un": "unid", "img": "https://img.icons8.com/color/144/pineapple.png"},
@@ -47,10 +47,13 @@ produtos_info = {
 # 4. Função para Carregar Dados
 def carregar_dados():
     try:
-        # Usa o link direto da URL definida acima
+        # Usa o link direto corrigido e força a leitura convertendo a primeira letra em maiúscula para evitar conflitos
         df = conn.read(spreadsheet=URL_PLANILHA, worksheet="Sheet1", ttl=0)
         if df is not None and not df.empty:
+            # Garante que "beterraba" ou "Beterraba" fiquem padronizados
+            df["Produto"] = df["Produto"].str.strip().str.capitalize()
             dados_planilha = df.set_index("Produto")["Quantidade"].to_dict()
+            
             estoque_final = {p: 0 for p in produtos_info.keys()}
             estoque_final.update(dados_planilha)
             return estoque_final

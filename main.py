@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import time
 
 # 1. Configuração da página
 st.set_page_config(page_title="Sesmaria do Cerro - Doações", layout="wide")
@@ -24,10 +25,8 @@ st.info("""
     4. Pronto! Ele ficará na sua tela igual a um aplicativo instalado.
 """)
 
-# 2. Configuração do LINK DIRETO de exportação (Método Nativo e Sem Erros)
-# Convertemos o link para formato CSV, eliminando qualquer chance de erro 404 da biblioteca antiga
+# 2. Link Base da Planilha
 URL_BASE = "https://docs.google.com/spreadsheets/d/1G9YlN3jMTe1ewSk8wBhGPfiwqMf61l0IiXpOZTsoivA"
-URL_CSV = f"{URL_BASE}/export?format=csv&gid=0"
 
 # 3. Dicionário de Produtos
 produtos_info = {
@@ -53,10 +52,14 @@ produtos_info = {
     "Uva": {"un": "kg", "img": "https://img.icons8.com/color/144/grapes.png"}
 }
 
-# 4. Função para Carregar Dados (Usando Pandas Direto)
+# 4. Função para Carregar Dados com quebra de cache ativa
 def carregar_dados():
     try:
-        df = pd.read_csv(URL_CSV)
+        # Geramos um número que muda a cada segundo (ex: t=17112345) para obrigar o Google a enviar os dados novos
+        timestamp_atual = int(time.time())
+        url_sem_cache = f"{URL_BASE}/export?format=csv&gid=0&t={timestamp_atual}"
+        
+        df = pd.read_csv(url_sem_cache)
         if df is not None and not df.empty:
             df.columns = df.columns.str.strip()
             df["Produto"] = df["Produto"].str.strip().str.capitalize()
@@ -66,14 +69,13 @@ def carregar_dados():
             estoque_final.update(dados_planilha)
             return estoque_final
     except Exception as e:
-        st.error(f"Erro ao ler dados da planilha: {e}")
+        st.error(f"Erro ao ler dados reais da planilha: {e}")
     return {p: 0 for p in produtos_info.keys()}
 
-# 5. Função para Atualizar Planilha
+# 5. Função para Atualizar Planilha (Trava de segurança temporária)
 def atualizar_planilha():
-    st.warning("⚠️ Para salvar alterações permanentes na nuvem, configure as credenciais de escrita do gsheets ou use o formulário integrado.")
-    # Mantém a atualização local no session_state para a interface funcionar perfeitamente em tempo real
-    st.toast("🔄 Atualizado localmente na tela!")
+    st.warning("⚠️ Para gravar dados diretamente na nuvem pelo app, precisaremos do formulário integrado.")
+    st.toast("🔄 Atualizado na tela temporariamente!")
 
 # Inicialização do Estoque
 if 'estoque' not in st.session_state:
@@ -81,6 +83,11 @@ if 'estoque' not in st.session_state:
 
 # --- INTERFACE ---
 st.title("🚜 Sesmaria do Cerro")
+
+# Botão manual para forçar a leitura imediata da planilha do Google
+if st.button("🔄 Atualizar Dados da Planilha Nuvem", use_container_width=True):
+    st.session_state.estoque = carregar_dados()
+    st.rerun()
 
 st.header("📦 Estoque Atual")
 col1, col2 = st.columns(2)
@@ -116,3 +123,4 @@ with c2:
             st.rerun()
         else:
             st.error("Sem estoque!")
+    

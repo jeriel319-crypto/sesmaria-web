@@ -35,7 +35,9 @@ HEADERS = {
     "Authorization": f"Bearer {AIRTABLE_TOKEN}",
     "Content-Type": "application/json"
 }
-URL_AIRTABLE = f"https://api.airtable.com/v1/{BASE_ID}/{TABLE_NAME}"
+
+# CORREÇÃO AQUI: Mudado de /v1/ para /v0/ para alinhar com a API do Airtable
+URL_AIRTABLE = f"https://api.airtable.com/v0/{BASE_ID}/{TABLE_NAME}"
 # ==============================================================================
 
 # Dicionário fixo de ícones e unidades do seu app
@@ -160,3 +162,4 @@ st.divider()
 if st.button("🔄 Sincronizar e Puxar Dados do Banco Nuvem", use_container_width=True):
     st.session_state.estoque, st.session_state.ids = carregar_dados_airtable()
     st.rerun()
+        

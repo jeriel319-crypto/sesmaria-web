@@ -1,5 +1,4 @@
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 
 # 1. Configuração da página
@@ -16,11 +15,21 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. Configuração da Conexão e LINK DIRETO CORRIGIDO (Para evitar erro 404)
-conn = st.connection("gsheets", type=GSheetsConnection)
-URL_PLANILHA = "https://docs.google.com/spreadsheets/d/1G9YlN3jMTe1ewSk8wBhGPfiwqMf61l0IiXpOZTsoivA/edit#gid=0"
+# --- ABA DE INSTRUÇÕES (PASSO A PASSO PARA INSTALAR NA TELA) ---
+st.info("""
+    **📱 Como instalar este sistema no seu celular:**
+    1. Abra este link pelo navegador do seu celular (como o **Google Chrome**).
+    2. Toque nos **três pontinhos (⋮)** no canto superior direito do navegador.
+    3. Selecione a opção **"Adicionar à tela inicial"** ou **"Instalar aplicativo"**.
+    4. Pronto! Ele ficará na sua tela igual a um aplicativo instalado.
+""")
 
-# 3. Dicionário de Produtos (Chaves ajustadas para bater com a planilha)
+# 2. Configuração do LINK DIRETO de exportação (Método Nativo e Sem Erros)
+# Convertemos o link para formato CSV, eliminando qualquer chance de erro 404 da biblioteca antiga
+URL_BASE = "https://docs.google.com/spreadsheets/d/1G9YlN3jMTe1ewSk8wBhGPfiwqMf61l0IiXpOZTsoivA"
+URL_CSV = f"{URL_BASE}/export?format=csv&gid=0"
+
+# 3. Dicionário de Produtos
 produtos_info = {
     "Beterraba": {"un": "kg", "img": "https://img.icons8.com/color/144/beet.png"},
     "Abacaxi": {"un": "unid", "img": "https://img.icons8.com/color/144/pineapple.png"},
@@ -44,13 +53,12 @@ produtos_info = {
     "Uva": {"un": "kg", "img": "https://img.icons8.com/color/144/grapes.png"}
 }
 
-# 4. Função para Carregar Dados
+# 4. Função para Carregar Dados (Usando Pandas Direto)
 def carregar_dados():
     try:
-        # Usa o link direto corrigido e força a leitura convertendo a primeira letra em maiúscula para evitar conflitos
-        df = conn.read(spreadsheet=URL_PLANILHA, worksheet="Sheet1", ttl=0)
+        df = pd.read_csv(URL_CSV)
         if df is not None and not df.empty:
-            # Garante que "beterraba" ou "Beterraba" fiquem padronizados
+            df.columns = df.columns.str.strip()
             df["Produto"] = df["Produto"].str.strip().str.capitalize()
             dados_planilha = df.set_index("Produto")["Quantidade"].to_dict()
             
@@ -58,19 +66,16 @@ def carregar_dados():
             estoque_final.update(dados_planilha)
             return estoque_final
     except Exception as e:
-        st.error(f"Erro de conexão: {e}")
+        st.error(f"Erro ao ler dados da planilha: {e}")
     return {p: 0 for p in produtos_info.keys()}
 
 # 5. Função para Atualizar Planilha
 def atualizar_planilha():
-    try:
-        df_save = pd.DataFrame(list(st.session_state.estoque.items()), columns=["Produto", "Quantidade"])
-        conn.update(spreadsheet=URL_PLANILHA, worksheet="Sheet1", data=df_save)
-        st.toast("✅ Sincronizado!")
-    except Exception as e:
-        st.error(f"Erro ao salvar: {e}")
+    st.warning("⚠️ Para salvar alterações permanentes na nuvem, configure as credenciais de escrita do gsheets ou use o formulário integrado.")
+    # Mantém a atualização local no session_state para a interface funcionar perfeitamente em tempo real
+    st.toast("🔄 Atualizado localmente na tela!")
 
-# Inicialização
+# Inicialização do Estoque
 if 'estoque' not in st.session_state:
     st.session_state.estoque = carregar_dados()
 
@@ -111,4 +116,3 @@ with c2:
             st.rerun()
         else:
             st.error("Sem estoque!")
-    

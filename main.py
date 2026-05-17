@@ -16,14 +16,15 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- ABA DE INSTRUÇÕES (PASSO A PASSO PARA INSTALAR NA TELA) ---
-st.info("""
-    **📱 Como instalar este sistema no seu celular:**
-    1. Abra este link pelo navegador do seu celular (como o **Google Chrome**).
-    2. Toque nos **três pontinhos (⋮)** no canto superior direito do navegador.
-    3. Selecione a opção **"Adicionar à tela inicial"** ou **"Instalar aplicativo"**.
-    4. Pronto! Ele ficará na sua tela igual a um aplicativo instalado.
-""")
+# --- ABA RETRÁTIL DE INSTRUÇÕES (Clica na seta para abrir/fechar) ---
+with st.expander("ℹ️ Clique aqui para ver como instalar no celular"):
+    st.write("""
+        **📱 Passo a passo:**
+        1. Abra este link pelo navegador do seu celular (como o **Google Chrome**).
+        2. Toque nos **três pontinhos (⋮)** no canto superior direito do navegador.
+        3. Selecione a opção **"Adicionar à tela inicial"** ou **"Instalar aplicativo"**.
+        4. Pronto! Ele ficará na sua tela igual a um aplicativo instalado.
+    """)
 
 # 2. Link Base da Planilha
 URL_BASE = "https://docs.google.com/spreadsheets/d/1G9YlN3jMTe1ewSk8wBhGPfiwqMf61l0IiXpOZTsoivA"
@@ -55,7 +56,6 @@ produtos_info = {
 # 4. Função para Carregar Dados com quebra de cache ativa
 def carregar_dados():
     try:
-        # Geramos um número que muda a cada segundo (ex: t=17112345) para obrigar o Google a enviar os dados novos
         timestamp_atual = int(time.time())
         url_sem_cache = f"{URL_BASE}/export?format=csv&gid=0&t={timestamp_atual}"
         
@@ -72,10 +72,10 @@ def carregar_dados():
         st.error(f"Erro ao ler dados reais da planilha: {e}")
     return {p: 0 for p in produtos_info.keys()}
 
-# 5. Função para Atualizar Planilha (Trava de segurança temporária)
+# 5. Função para Atualizar Planilha (Aviso de gravação)
 def atualizar_planilha():
-    st.warning("⚠️ Para gravar dados diretamente na nuvem pelo app, precisaremos do formulário integrado.")
-    st.toast("🔄 Atualizado na tela temporariamente!")
+    st.warning("⚠️ O valor reseta porque o app ainda está bloqueado para SALVAR na nuvem. Deseja configurar o formulário?")
+    st.toast("🔄 Alterado apenas na tela temporariamente!")
 
 # Inicialização do Estoque
 if 'estoque' not in st.session_state:
@@ -83,11 +83,6 @@ if 'estoque' not in st.session_state:
 
 # --- INTERFACE ---
 st.title("🚜 Sesmaria do Cerro")
-
-# Botão manual para forçar a leitura imediata da planilha do Google
-if st.button("🔄 Atualizar Dados da Planilha Nuvem", use_container_width=True):
-    st.session_state.estoque = carregar_dados()
-    st.rerun()
 
 st.header("📦 Estoque Atual")
 col1, col2 = st.columns(2)
@@ -123,4 +118,10 @@ with c2:
             st.rerun()
         else:
             st.error("Sem estoque!")
-    
+
+st.divider()
+
+# BOTÃO DE ATUALIZAÇÃO REPOSICIONADO PARA O FINAL DA TELA
+if st.button("🔄 Sincronizar e Puxar Dados Atualizados da Planilha", use_container_width=True):
+    st.session_state.estoque = carregar_dados()
+    st.rerun()
